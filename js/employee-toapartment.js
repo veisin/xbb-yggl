@@ -36,7 +36,7 @@ window.employeeToApartmentModule = async function(containerId) {
     const html = `
     <div class="ea-wrapper">
         <div class="ea-header">
-            <h3><i class="fas fa-key"></i> 员工入住登记系统</h3>
+            <h3><i class="fas fa-key"></i> 员工入住登记系统<span class="ea-headlabel">请记得去 员工表(Employees) 开启住宿(Accommodation:Yes)并填写租金(Rent)</span></h3>
             <div id="ea-selection-status" style="font-size: 13px; color: #666;">请选择员工和公寓</div>
         </div>
         <div class="ea-main-content">
@@ -66,6 +66,21 @@ window.employeeToApartmentModule = async function(containerId) {
                     <textarea id="ea-remark" class="ea-ui-input" style="height:50px;"></textarea>
                 </div>
                 <button id="ea-save-btn" class="ea-submit-btn">办理入住</button>
+            </div>
+        </div>
+
+        <div class="ea-footer-table-card">
+            <div class="ea-card-head" style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="ea-label">3. 已入住记录查询 (Recent Records)</span>
+                <input type="text" id="ea-table-search" class="ea-search-input" style="width: 300px;" placeholder="模糊搜索全表数据...">
+            </div>
+            <div class="ea-table-container">
+                <table id="ea-record-table">
+                    <thead>
+                        </thead>
+                    <tbody>
+                        </tbody>
+                </table>
             </div>
         </div>
     </div>`;
@@ -145,11 +160,43 @@ window.employeeToApartmentModule = async function(containerId) {
                 state.selectedApt = null;
                 $('#ea-parking, #ea-note, #ea-remark, #ea-emp-search, #ea-apt-search').val('');
                 renderLists(); 
+                loadRecords();
+                
             } catch (e) {
                 alert("存储失败：" + e.message);
             }
         }
     });
 
+    // 在你的 Module 内部定义
+    const loadRecords = async () => {
+        const recordRes = await getTableFullData(CONFIG.tableRecord); // 获取记录表
+        const keyword = $('#ea-table-search').val().toLowerCase().trim();
+
+        // 渲染表头
+        const thead = `<tr>${recordRes.schema.columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
+        $('#ea-record-table thead').html(thead);
+
+        // 渲染数据
+        const tbody = recordRes.data.filter(row => {
+            // 全表模糊匹配逻辑：只要这一行有任何一个单元格包含关键字就显示
+            return row.some(cell => String(cell).toLowerCase().includes(keyword));
+        }).map(row => {
+            // row[0] 是 UID，row[1] 是第一个业务字段
+            // 这里的 row 数组内容要从索引 1 开始，因为 row[0] 是 db.js 自动加的 UID
+            const cells = row.slice(1).map(cell => `<td>${cell || ''}</td>`).join('');
+            return `<tr>${cells}</tr>`;
+        }).reverse().join(''); // reverse() 让最新的记录显示在最上面
+
+        $('#ea-record-table tbody').html(tbody);
+    };
+
+    // 绑定搜索事件
+    $('#ea-table-search').on('input', loadRecords);
+
+    // 在 save-btn 保存成功后，也调用一次 loadRecords()
+    // 在整个模块加载末尾，执行一次 loadRecords()
+    
     renderLists();
+    loadRecords();
 };

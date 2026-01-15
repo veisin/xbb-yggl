@@ -68,6 +68,7 @@
 .ea-input-group { background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
 .ea-label { font-size: 12px; font-weight: bold; color: #666; margin-bottom: 5px; display: block; }
+.ea-headlabel { font-size: 12px; font-weight: bold; margin-left: 20px; color: darkred;}
 
 .ea-ui-input { 
     width: 100%; 
@@ -93,3 +94,10 @@
 
 .ea-badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #fff; margin-left: 5px; }
 .ea-bg-blue { background: #3498db; }
+
+.ea-footer-table-card { background: #fff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); flex-shrink: 0; max-height: 300px; min-height: 300px; display: flex; flex-direction: column; }
+.ea-table-container { overflow: auto; flex: 1;}
+#ea-record-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+#ea-record-table th { background: #f8f9fa; position: sticky; top: 0; padding: 10px; border-bottom: 2px solid #dee2e6; text-align: left; white-space: nowrap; }
+#ea-record-table td { padding: 8px 10px; border-bottom: 1px solid #eee; white-space: nowrap; }
+#ea-record-table tr:hover { background: #f1f8ff; }
