@@ -689,6 +689,9 @@ $(document).ready(async function () {
                 case 'backup-export':
                     backupExportUI(id, title); // 执行 数据库备份还原 的界面渲染
                     break;
+                case 'employee-toapartment':
+                    employeeToApartmentModule('tabContent'); // 员工入住设置
+                    break;
                 default:
                     renderPlaceholderView(id, title); // 其他没做的模块显示“开发中”
             }

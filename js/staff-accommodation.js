@@ -6,6 +6,12 @@ const AccommodationEngine = {
 
     // 1. 初始化入口
     render: async function(containerId) {
+        const AC_DEFAULT_CONFIG = { //初始化配置
+            empTableId: "employees",          // 对应你的员工表 ID
+            aptTableId: "EmployeeApartment",  // 对应你的员工公寓表 ID
+            month: new Date().toISOString().slice(0, 7) // 默认为当前月份
+        };
+
         this.state.container = $(`#${containerId}`);
         const allTables = await getAllSchemas(); // 使用 db.js 里的安全函数
         const tableOptions = allTables.map(t => `<option value="${t.id}">${t.title || t.id}</option>`).join('');
@@ -70,7 +76,35 @@ const AccommodationEngine = {
             </footer>
         </div>`;
 
-        this.state.container.html(html);
+        this.state.container.empty().html(html);
+
+        // --- 【新增：默认加载逻辑】 ---
+        // 1. 设置员工表下拉框
+        // if ($('#ac-table-emp').find(`option[value="${AC_DEFAULT_CONFIG.empTableId}"]`).length > 0) {
+        //     $('#ac-table-emp').val(AC_DEFAULT_CONFIG.empTableId);
+        // }
+        // // 2. 设置住宿表下拉框
+        // if ($('#ac-table-apt').find(`option[value="${AC_DEFAULT_CONFIG.aptTableId}"]`).length > 0) {
+        //     $('#ac-table-apt').val(AC_DEFAULT_CONFIG.aptTableId);
+        // }
+        // 修改上面的第1、2步逻辑为：更智能的“容错”加载 表名可能会变动（比如后面加了日期）
+        const findAndSet = (selector, key) => {
+            const $select = $(selector);
+            // 尝试精准匹配
+            if ($select.find(`option[value="${key}"]`).length > 0) {
+                $select.val(key);
+            } else {
+                // 如果找不到精准的，尝试模糊匹配包含该字符的第一个表
+                const fuzzyId = allTables.find(t => t.id.toLowerCase().includes(key.toLowerCase()))?.id;
+                if (fuzzyId) $select.val(fuzzyId);
+            }
+        };
+        findAndSet('#ac-table-emp', AC_DEFAULT_CONFIG.empTableId);
+        findAndSet('#ac-table-apt', AC_DEFAULT_CONFIG.aptTableId);
+        // 3. 设置默认月份
+        $('#ac-calc-month').val(AC_DEFAULT_CONFIG.month);
+
+
         this.bindEvents();
     },
 
