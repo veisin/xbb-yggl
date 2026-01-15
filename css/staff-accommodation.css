@@ -1,45 +1,45 @@
-.accommodation-outer-wrapper { display: flex; width: 100%; height: 100%; gap: 1px; background: #eee; }
-.accom-settings-side { width: 320px; background: #fff; padding: 20px; box-sizing: border-box; }
-.accom-result-main { flex: 1; background: #fff; display: flex; flex-direction: column; padding: 20px; }
+.ac-outer-wrapper { display: flex; flex-direction: column; width: 100%; height: 88vh; background: #f0f2f5; padding: 15px; box-sizing: border-box; gap: 15px; }
+.ac-top-area { display: flex; flex: 1; gap: 15px; min-height: 0; }
 
-.side-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-.accom-ui-select, .accom-ui-input { width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid #cbd5e0; border-radius: 4px; }
+/* 侧边栏 */
+.ac-settings-side { width: 320px; background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow-y: auto; }
+.ac-side-card { margin-bottom: 25px; }
+.ac-side-title { margin: 0 0 15px 0; color: #1e293b; font-size: 15px; border-left: 4px solid #3b82f6; padding-left: 10px; }
+.ac-label { display: block; font-size: 12px; color: #64748b; margin-bottom: 5px; font-weight: 600; }
 
-.btn-primary-run { width: 100%; padding: 12px; background: #2b6cb0; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+/* 控件 */
+.ac-ui-select, .ac-ui-input, .ac-ui-area { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; margin-bottom: 12px; box-sizing: border-box; }
+.ac-ui-area { height: 80px; resize: none; }
+.ac-btn-run { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+.ac-btn-run:hover { background: #2563eb; }
 
-.stats-bar { display: flex; gap: 15px; margin-bottom: 15px; }
-.stat-item { padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: bold; flex: 1; border: 1px solid transparent; }
-.stat-item.red { background: #fff5f5; color: #c53030; border-color: #feb2b2; }
-.stat-item.yellow { background: #fffaf0; color: #975a16; border-color: #fbd38d; }
-.stat-item.purple { background: #faf5ff; color: #553c9a; border-color: #e9d8fd; }
+/* 主表区 */
+.ac-result-main { flex: 1; background: #fff; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.ac-table-container { flex: 1; overflow: auto; border: 1px solid #f1f5f9; }
+.ac-audit-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ac-audit-table th { background: #f8fafc; padding: 12px; text-align: left; position: sticky; top: 0; z-index: 5; color: #475569; border-bottom: 2px solid #e2e8f0; }
+.ac-audit-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
 
-.audit-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.audit-table th { background: #edf2f7; padding: 12px; text-align: left; position: sticky; top: 0; }
-.audit-table td { padding: 10px 12px; border-bottom: 1px solid #edf2f7; }
+/* 状态样式 */
+.ac-tag { padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #fff; }
+.ac-tag-ok { background: #52c41a; }
+.ac-tag-warn { background: #faad14; }
+.ac-tag-err { background: #ff4d4f; }
+.ac-tag-spec { background: #722ed1; }
+.ac-tag-over { background: #13c2c2; }
+.ac-tag-pending { background: #ff7a45; } /* 橙色，表示 Not Sure */
 
-/* 行状态颜色 */
-.row-missing { background-color: #fff5f5 !important; } /* 缺失关键数据 */
-.row-emp-only { background-color: #fffaf0 !important; } /* 仅员工表有 */
-.row-apt-only { background-color: #faf5ff !important; } /* 仅住宿表有 */.accommodation-outer-wrapper { display: flex; width: 100%; height: 100%; gap: 1px; background: #eee; }
-.accom-settings-side { width: 320px; background: #fff; padding: 20px; box-sizing: border-box; }
-.accom-result-main { flex: 1; background: #fff; display: flex; flex-direction: column; padding: 20px; }
+.ac-row-warn { background-color: #fffbe6 !important; }
+.ac-row-danger { background-color: #fff1f0 !important; }
+.ac-row-special { background-color: #f9f0ff !important; }
 
-.side-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-.accom-ui-select, .accom-ui-input { width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid #cbd5e0; border-radius: 4px; }
-
-.btn-primary-run { width: 100%; padding: 12px; background: #2b6cb0; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-
-.stats-bar { display: flex; gap: 15px; margin-bottom: 15px; }
-.stat-item { padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: bold; flex: 1; border: 1px solid transparent; }
-.stat-item.red { background: #fff5f5; color: #c53030; border-color: #feb2b2; }
-.stat-item.yellow { background: #fffaf0; color: #975a16; border-color: #fbd38d; }
-.stat-item.purple { background: #faf5ff; color: #553c9a; border-color: #e9d8fd; }
-
-.audit-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.audit-table th { background: #edf2f7; padding: 12px; text-align: left; position: sticky; top: 0; }
-.audit-table td { padding: 10px 12px; border-bottom: 1px solid #edf2f7; }
-
-/* 行状态颜色 */
-.row-missing { background-color: #fff5f5 !important; } /* 缺失关键数据 */
-.row-emp-only { background-color: #fffaf0 !important; } /* 仅员工表有 */
-.row-apt-only { background-color: #faf5ff !important; } /* 仅住宿表有 */
+/* 底部看板 */
+.ac-diag-panel { background: #fff; border-radius: 8px; padding: 15px; border-top: 4px solid #ff4d4f; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+.ac-diag-title { margin: 0 0 12px 0; font-size: 14px; color: #1e293b; }
+.ac-diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+.ac-diag-card { padding: 12px; border-radius: 6px; border: 1px solid #eee; background: #fcfcfc; max-height: 180px; overflow-y: auto; }
+.ac-diag-card h5 { margin: 0 0 10px 0; font-size: 13px; }
+.ac-diag-item { font-size: 11px; padding: 6px; margin-bottom: 5px; background: #fff; border: 1px solid #f1f5f9; border-radius: 4px; line-height: 1.4; }
+.ac-border-red { border-left: 4px solid #ff4d4f; }
+.ac-border-yellow { border-left: 4px solid #faad14; }
+.ac-border-purple { border-left: 4px solid #722ed1; }

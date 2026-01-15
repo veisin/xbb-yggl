@@ -7,36 +7,29 @@ let cachedDB = null; // 全局缓存数据库实例
 
 function initDB() {
     return new Promise((resolve, reject) => {
-        if (cachedDB) return resolve(cachedDB);
+        // 【关键改动】如果已经连接过，直接返回缓存，不重复 open
+        if (cachedDB) {
+            return resolve(cachedDB);
+        }
 
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
-            // 确保所有桶都存在
-            if (!db.objectStoreNames.contains('schemas')) db.createObjectStore('schemas', { keyPath: 'id' });
-            if (!db.objectStoreNames.contains('tableData')) db.createObjectStore('tableData', { keyPath: 'id' });
-            if (!db.objectStoreNames.contains('backups')) db.createObjectStore('backups', { keyPath: 'id', autoIncrement: true });
-            // 修复你代码中提到的 tableConfigs 桶缺失问题
-            if (!db.objectStoreNames.contains('tableConfigs')) db.createObjectStore('tableConfigs', { keyPath: 'id' });
+            if (!db.objectStoreNames.contains('schemas')) {
+                db.createObjectStore('schemas', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('tableData')) {
+                db.createObjectStore('tableData', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('backups')) {
+                db.createObjectStore('backups', { keyPath: 'id', autoIncrement: true });
+            }
         };
 
-        request.onsuccess = async (e) => {
-            cachedDB = e.target.result;
-            window.db = cachedDB;
-
-            // --- 核心改动：申请持久化存储 ---
-            if (navigator.storage && navigator.storage.persist) {
-                const isPersisted = await navigator.storage.persisted();
-                if (!isPersisted) {
-                    const granted = await navigator.storage.persist();
-                    console.log(granted ? "🎉 存储已成功锁定，不会被系统轻易清理" : "⚠️ 持久化申请被拒绝");
-                } else {
-                    console.log("✅ 存储已处于持久化状态");
-                }
-            }
-            // ---------------------------
-
+        request.onsuccess = (e) => {
+            cachedDB = e.target.result; // 【关键改动】存入缓存
+            window.db = cachedDB;      // 同时挂载到全局方便调试
             resolve(cachedDB);
         };
 

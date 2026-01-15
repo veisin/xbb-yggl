@@ -684,7 +684,7 @@ $(document).ready(async function () {
                     renderProcessingModule('tabContent'); // 导航 表格数据处理 
                     break;
                 case 'staff-accommodation':
-                    staffAccommodationModule('tabContent'); // 导航 表格数据处理 
+                    renderAccommodationModule('tabContent'); // 导航 表格数据处理 
                     break;
                 case 'backup-export':
                     backupExportUI(id, title); // 执行 数据库备份还原 的界面渲染

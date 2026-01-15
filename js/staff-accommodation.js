@@ -1,443 +1,243 @@
 /**
- * 住宿费计算与交叉核对模块 (V6.0)
- * 1. 处理所有表的 UID 偏移
- * 2. 强化 EmployeeNo 姓名匹配
- * 3. 底部明细化诊断看板
+ * AccommodationEngine - 住宿核算与诊断专家系统 (彻底隔离版)
  */
+const AccommodationEngine = {
+    state: { container: null },
 
-window.staffAccommodationModule = async function(containerId) {
-    const allTables = await getAllTableConfigs();
-    const tableOptions = allTables.map(t => `<option value="${t.id}">${t.title || t.id}</option>`).join('');
+    // 1. 初始化入口
+    render: async function(containerId) {
+        this.state.container = $(`#${containerId}`);
+        const allTables = await getAllSchemas(); // 使用 db.js 里的安全函数
+        const tableOptions = allTables.map(t => `<option value="${t.id}">${t.title || t.id}</option>`).join('');
 
-    const html = `
-        <div class="accommodation-outer-wrapper">
-            <style>
-                .accommodation-outer-wrapper { display: flex; width: 100%; height: 100%; background: #f0f2f5; gap: 15px; padding: 15px; box-sizing: border-box; flex-direction: column; overflow: hidden; }
-                .top-content-area { display: flex; flex: 1; gap: 15px; min-height: 0; }
-                
-                /* 左侧设置区 */
-                .accom-settings-side { width: 300px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow-y: auto; }
-                .side-card h4 { margin: 0 0 12px 0; color: #333; font-size: 15px; border-left: 4px solid #3498db; padding-left: 10px; }
-                
-                /* 右侧结果区 */
-                .accom-result-main { flex: 1; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
-                
-                /* 底部诊断区 - 强化版 */
-                .exception-diagnostic-center { height: 240px; background: #fff; border-radius: 8px; border-top: 4px solid #ff4d4f; padding: 15px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); overflow-y: auto; }
-                .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-                .diag-card { padding: 10px; border-radius: 6px; border: 1px solid #eee; background: #fafafa; }
-                .diag-card h5 { margin: 0 0 8px 0; font-size: 13px; display: flex; align-items: center; gap: 5px; }
-                .diag-item { font-size: 11px; padding: 4px 8px; margin-bottom: 4px; border-radius: 4px; background: #fff; border: 1px solid #f0f0f0; line-height: 1.4; }
-                .diag-tag { font-weight: bold; color: #cf1322; }
-
-                .ui-label { display: block; font-size: 11px; color: #777; margin-bottom: 3px; font-weight: bold; }
-                .accom-ui-select, .accom-ui-input, .accom-ui-area { width: 100%; padding: 7px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
-                
-                .table-container { flex: 1; overflow: auto; border: 1px solid #eee; border-radius: 4px; }
-                .audit-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-                .audit-table th { background: #f8f9fa; padding: 10px; border-bottom: 2px solid #eee; position: sticky; top: 0; z-index: 10; text-align: left; }
-                .audit-table td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
-                
-                .row-warning { background-color: #fffaf0 !important; } /* 缺日期 */
-                .row-danger { background-color: #fff1f0 !important; }  /* 库缺失 */
-                .row-special { background-color: #f9f0ff !important; } /* 库外人员 */
-                .row-override { background-color: #e6fffb !important; }
-                
-                .btn-run { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-            </style>
-
-            <div class="top-content-area">
-                <div class="accom-settings-side">
-                    <div class="side-card">
-                        <h4>数据源选择</h4>
-                        <label class="ui-label">员工表 (Employees)</label>
-                        <select id="tableEmp" class="accom-ui-select">${tableOptions}</select>
-                        <label class="ui-label">住宿表 (Apartment)</label>
-                        <select id="tableApt" class="accom-ui-select">${tableOptions}</select>
-                        <label class="ui-label">员工编号表 (EmployeeNo)</label>
-                        <select id="tableNo" class="accom-ui-select">${tableOptions}</select>
+        const html = `
+        <div class="ac-outer-wrapper">
+            <div class="ac-top-area">
+                <aside class="ac-settings-side">
+                    <div class="ac-side-card">
+                        <h4 class="ac-side-title">📊 数据源配置</h4>
+                        <label class="ac-label">请选择 员工表 (Employees)</label>
+                        <select id="ac-table-emp" class="ac-ui-select">${tableOptions}</select>
                         
-                        <label class="ui-label">结算月份</label>
-                        <input type="month" id="calcMonth" class="accom-ui-input" value="${new Date().toISOString().slice(0, 7)}">
+                        <label class="ac-label">请选择 员工公寓表 (EmployeeApartment)</label>
+                        <select id="ac-table-apt" class="ac-ui-select">${tableOptions}</select>
+                        
+                        <label class="ac-label">选择 计算月份</label>
+                        <input type="month" id="ac-calc-month" class="ac-ui-input" value="${new Date().toISOString().slice(0, 7)}">
                     </div>
                     
-                    <div class="side-card" style="margin-top:15px;">
-                        <h4>特殊规则</h4>
-                        <label class="ui-label">覆盖 ID (每行一个)</label>
-                        <textarea id="overrideIds" class="accom-ui-area" placeholder="EMP0010"></textarea>
-                        <label class="ui-label">统一覆盖金额</label>
-                        <input type="number" id="overrideAmount" class="accom-ui-input" value="0">
-                        <button class="btn-run" onclick="window.runAccommodationAudit()">计算并诊断</button>
+                    <div class="ac-side-card">
+                        <h4 class="ac-side-title">⚙️ 特殊金额计算规则</h4>
+                        <label class="ac-label">例外的员工 ID (每行一个)</label>
+                        <textarea id="ac-override-ids" class="ac-ui-area" placeholder="例如: EMP0010"></textarea>
+                        
+                        <label class="ac-label">统一覆盖金额</label>
+                        <input type="number" id="ac-override-val" class="ac-ui-input" value="0">
+                        
+                        <button id="ac-run-btn" class="ac-btn-run">开始计算并诊断</button>
                     </div>
-                </div>
+                </aside>
 
-                <div class="accom-result-main">
-                    <div class="table-container">
-                        <table class="audit-table">
+                <main class="ac-result-main">
+                    <div class="ac-stats-bar" id="ac-stats-bar">
+                        </div>
+                    <div class="ac-table-container">
+                        <table class="ac-audit-table">
                             <thead>
                                 <tr>
                                     <th>状态</th>
                                     <th>工号</th>
-                                    <th>姓名 (First + Surname)</th>
+                                    <th>姓名</th>
                                     <th>入住日期</th>
-                                    <th>原标准</th>
+                                    <th>标准租金</th>
                                     <th>当月预估</th>
                                     <th>次月标准</th>
                                 </tr>
                             </thead>
-                            <tbody id="accomAuditBody"></tbody>
+                            <tbody id="ac-audit-body">
+                                <tr><td colspan="7" style="text-align:center; padding:40px; color:#999;">请配置数据源并点击“开始计算”</td></tr>
+                            </tbody>
                         </table>
                     </div>
-                </div>
+                </main>
             </div>
 
-            <div class="exception-diagnostic-center" id="diagCenter">
-                <h4 style="margin:0 0 12px 0; color:#333; font-size:14px;"><i class="fas fa-microscope"></i> 结算异常明细诊断表</h4>
-                <div class="diag-grid" id="diagGrid">
+            <footer class="ac-diag-panel">
+                <h4 class="ac-diag-title"><i class="fas fa-microscope"></i> 结算异常明细诊断看板</h4>
+                <div class="ac-diag-grid" id="ac-diag-grid">
                     </div>
-            </div>
-        </div>
-    `;
+            </footer>
+        </div>`;
 
-    $(`#${containerId}`).empty().html(html).show();
-};
+        this.state.container.html(html);
+        this.bindEvents();
+    },
 
-window.runAccommodationAudit = async function() {
-    const baseMonthStr = $('#calcMonth').val();
-    const baseDate = new Date(baseMonthStr + "-01");
-    const overrideIds = $('#overrideIds').val().toUpperCase().split('\n').map(s => s.trim()).filter(s => s);
-    const overrideVal = parseFloat($('#overrideAmount').val()) || 0;
+    // 2. 内部事件绑定
+    bindEvents: function() {
+        const self = this;
+        this.state.container.on('click', '#ac-run-btn', () => self.runAudit());
+    },
 
-    try {
-        const [empRes, aptRes, noRes] = await Promise.all([
-            getTableFullData($('#tableEmp').val()),
-            getTableFullData($('#tableApt').val()),
-            getTableFullData($('#tableNo').val())
-        ]);
-        
-        // 使用你验证过的正确偏移逻辑
-        const getIdx = (schema, name) => schema.columns.findIndex(c => c.toLowerCase().includes(name.toLowerCase())) + 1;
-        
-        // 索引映射
-        const idxE = { id: getIdx(empRes.schema, "employeeid"), surname: getIdx(empRes.schema, "surname"), first: getIdx(empRes.schema, "first name"), accom: getIdx(empRes.schema, "accommodation"), rent: getIdx(empRes.schema, "rent") };
-        const idxA = { id: getIdx(aptRes.schema, "employeeid"), date: getIdx(aptRes.schema, "move-in date") };
-        const idxN = { id: getIdx(noRes.schema, "employeeid"), surname: getIdx(noRes.schema, "surname"), first: getIdx(noRes.schema, "firstname") }; // 注意这里配合你的JSON是firstname
+    // 3. 核心计算逻辑
+    runAudit: async function() {
+        try {
+            const empId = $('#ac-table-emp').val();
+            const aptId = $('#ac-table-apt').val();
+            const baseMonth = $('#ac-calc-month').val();
+            const overrideIds = $('#ac-override-ids').val().toUpperCase().split('\n').filter(s => s.trim());
+            const overrideAmt = parseFloat($('#ac-override-val').val()) || 0;
 
-        // 1. 构建最全的姓名索引 (EmployeeNo)
-        const nameMaster = new Map();
-        noRes.data.forEach(row => {
-            const id = String(row[idxN.id] || '').trim().toUpperCase();
-            if(id && id !== "UNDEFINED") {
-                // 根据你提供的JSON结构：FirstName在后，Surname在前，中间可能有空
-                const fName = String(row[idxN.first] || '').trim();
-                const sName = String(row[idxN.surname] || '').trim();
-                nameMaster.set(id, `${fName} ${sName}`.trim());
-            }
-        });
+            const [empRes, aptRes] = await Promise.all([getTableFullData(empId), getTableFullData(aptId)]);
 
-        // 2. 扫描员工表
-        const empMap = new Map();
-        empRes.data.forEach(row => {
-            if(String(row[idxE.accom]).trim().toUpperCase() === 'YES') {
-                const id = String(row[idxE.id]).trim().toUpperCase();
-                // 姓名补全逻辑：优先看主表，主表没名字去编号表找
-                let name = `${row[idxE.first] || ''} ${row[idxE.surname] || ''}`.trim();
-                if ((!name || name.length < 2) && nameMaster.has(id)) name = nameMaster.get(id);
-                
-                empMap.set(id, { id, name: name || "Unknown", rentStr: String(row[idxE.rent] || ""), processed: false });
-            }
-        });
+            // 索引定位（基于你提供的表结构）
+            const getIdx = (s, name) => s.columns.findIndex(c => c.toLowerCase().includes(name.toLowerCase())) + 1;
+            const iE = { id: getIdx(empRes.schema, "employeeid"), first: getIdx(empRes.schema, "first name"), sur: getIdx(empRes.schema, "surname"), acc: getIdx(empRes.schema, "accommodation"), rent: getIdx(empRes.schema, "rent") };
+            const iA = { id: getIdx(aptRes.schema, "employeeid"), name: getIdx(aptRes.schema, "name"), date: getIdx(aptRes.schema, "move in date") };
 
-        // 3. 扫描住宿表
-        const aptMap = new Map();
-        aptRes.data.forEach(row => {
-            const id = String(row[idxA.id]).trim().toUpperCase();
-            if(id && id !== "XXXXX" && id !== "UNDEFINED") {
-                aptMap.set(id, { id, moveIn: row[idxA.date], processed: false });
-            }
-        });
+            const empMap = new Map();
+            const aptMap = new Map();
+            const results = [];
 
-        const finalResults = [];
+            // 解析员工表：筛选需要住宿的人 (Accommodation !== 'No')
+            empRes.data.forEach(row => {
+                const id = String(row[iE.id]).trim().toUpperCase();
+                const accStatus = String(row[iE.acc] || 'No').trim().toUpperCase();
+                if (accStatus !== 'NO' && id) {
+                    empMap.set(id, {
+                        id,
+                        name: `${row[iE.first] || ''} ${row[iE.sur] || ''}`.trim(),
+                        rentStr: row[iE.rent] || "300 €",
+                        accValue: String(row[iE.acc] || '').trim(), // 保存原始值（如 Not Sure）
+                        processed: false
+                    });
+                }
+            });
 
-        // 4. 交叉比对
-        empMap.forEach((emp, id) => {
-            const apt = aptMap.get(id);
-            let status = "NORMAL";
-            let moveIn = apt ? apt.moveIn : null;
+            // 解析住宿表
+            aptRes.data.forEach(row => {
+                const id = String(row[iA.id]).trim().toUpperCase();
+                if (id) {
+                    aptMap.set(id, { id, name: row[iA.name], moveIn: row[iA.date], processed: false });
+                }
+            });
 
-            if (overrideIds.includes(id)) status = "OVERRIDE";
-            else if (!apt) status = "MISSING_IN_APT";
-            // 严谨判定日期缺失：必须同时检查 null 和 "undefined" 字符串
-            else if (!moveIn || String(moveIn).trim() === "undefined" || String(moveIn).trim() === "null") status = "NO_DATE";
-            
-            const calc = calculateRent(emp.rentStr, status === "NO_DATE" ? null : moveIn, baseDate, status === "OVERRIDE" ? overrideVal : null);
-            finalResults.push({ ...emp, moveIn: (status === "NO_DATE" ? null : moveIn), ...calc, status });
-            if(apt) apt.processed = true;
-        });
+            // 交叉核对逻辑
+            empMap.forEach((emp, id) => {
+                const apt = aptMap.get(id);
+                let status = "NORMAL";
+                if (overrideIds.includes(id)) status = "OVERRIDE";
+                else if (!apt) status = "MISSING_RECORD";
+                else if (!apt.moveIn || apt.moveIn === "undefined") status = "NO_DATE";
 
-        // 5. 处理库外居住人员 (针对 EMP0180/EMP0365 的姓名修复)
-        aptMap.forEach((apt, id) => {
-            if(!apt.processed) {
-                // 关键修复：从全员库找名字，不再显示“未知”
-                const name = nameMaster.get(id) || "库外/未登记姓名";
-                let status = overrideIds.includes(id) ? "OVERRIDE" : "MISSING_IN_EMP";
-                
-                let moveIn = apt.moveIn;
-                // 如果库外人员也缺日期，改为 NO_DATE 状态以便底部统计
-                if (!moveIn || String(moveIn).trim() === "undefined") status = "NO_DATE";
+                const calc = this.calculate(emp.rentStr, (apt ? apt.moveIn : null), baseMonth, status === "OVERRIDE" ? overrideAmt : null);
+                results.push({ ...emp, moveIn: apt ? apt.moveIn : null, ...calc, status });
+                if (apt) apt.processed = true;
+            });
 
-                const calc = calculateRent("0", (status === "NO_DATE" ? null : moveIn), baseDate, status === "OVERRIDE" ? overrideVal : null);
-                finalResults.push({ id, name, rentStr: "0", moveIn: (status === "NO_DATE" ? null : moveIn), ...calc, status });
-            }
-        });
+            // 处理库外人员（住宿表有，但员工表没设为住宿）
+            aptMap.forEach((apt, id) => {
+                if (!apt.processed) {
+                    const calc = this.calculate("300 €", apt.moveIn, baseMonth, overrideIds.includes(id) ? overrideAmt : null);
+                    results.push({ id, name: apt.name || "未关联人员", rentStr: "300 €", moveIn: apt.moveIn, ...calc, status: "EXT_STAY" });
+                }
+            });
 
-        // 6. 渲染界面
-        renderAccomAuditTable(finalResults);
-        renderEnhancedDiagnostics(finalResults); // 确保统计函数存在
+            this.renderUI(results);
+        } catch (e) { alert("计算出错: " + e.message); }
+    },
 
-    } catch (e) {
-        console.error(e);
-        alert("核算失败: " + e.message);
-    }
-};
+    // 4. 房租算法与货币处理
+    calculate: function(rentStr, moveInStr, baseMonth, override) {
+        // 货币提取
+        const moneyPart = String(rentStr).match(/(\d+(\.\d+)?)/);
+        const amount = override !== null ? override : (moneyPart ? parseFloat(moneyPart[1]) : 300);
+        const unit = String(rentStr).match(/[^\d\s\.]+/)?.[0] || "€";
 
-// 租金计算与日期解析核心逻辑
-/**
- * 标准化租金计算 (V7.0)
- * 采用 5 天一档的结算逻辑
- */
-// function calculateRent(rentStr, moveInDateStr, baseDate, overrideAmount) {
-//     let amount = 0; 
-//     let unit = "EUR";
+        if (!moveInStr || moveInStr === "undefined") return { current: 0, next: amount, unit };
 
-//     // 1. 提取金额
-//     if (overrideAmount !== null) { 
-//         amount = overrideAmount; 
-//     } else {
-//         const moneyMatch = rentStr.match(/(\d+(\.\d+)?)/);
-//         amount = moneyMatch ? parseFloat(moneyMatch[1]) : 0;
-//         const unitMatch = rentStr.match(/[A-Za-z]+/);
-//         unit = unitMatch ? unitMatch[0] : "EUR";
-//     }
+        const baseDate = new Date(baseMonth + "-01");
+        const [d, m, y] = moveInStr.split('.');
+        const moveDate = new Date(y, m - 1, d);
 
-//     // 2. 如果日期缺失，当月预估为 0
-//     if (!moveInDateStr || String(moveInDateStr).trim() === "undefined") {
-//         return { current: "0.00", next: amount.toFixed(2), unit };
-//     }
-
-//     const moveIn = parseFlexibleDate(moveInDateStr);
-//     const targetYear = baseDate.getFullYear();
-//     const targetMonth = baseDate.getMonth();
-    
-//     let currentAmount = 0;
-
-//     // 3. 核心：按入住月份判断
-//     if (moveIn.getFullYear() === targetYear && moveIn.getMonth() === targetMonth) {
-//         /**
-//          * 5天档位结算逻辑：
-//          * (30 - 入住日期) / 5 -> 取整 -> * 5
-//          */
-//         const dayOfMonth = moveIn.getDate();
-        
-//         //所有人都免5天以内，一号入住从5号算
-//         const remainingDays = 30 - dayOfMonth;
-//         // 如果是 1 号，直接给 30 天；否则按 (30 - 入住日期) 计算
-//         // const remainingDays = (dayOfMonth === 1) ? 30 : (30 - dayOfMonth);
-
-//         const step = Math.floor(remainingDays / 5);
-//         const billingDays = step * 5; 
-        
-//         // 只有当 billingDays > 0 时才产生费用，防止月底最后几天入住直接免单
-//         currentAmount = (amount / 30) * Math.max(0, billingDays);
-        
-//     } else if (moveIn < baseDate) {
-//         // 之前月份入住，按全月 30 天计算
-//         currentAmount = amount;
-//     } else {
-//         // 未来月份入住
-//         currentAmount = 0;
-//     }
-
-//     return { 
-//         current: currentAmount.toFixed(2), 
-//         next: amount.toFixed(2), 
-//         unit: unit 
-//     };
-// }
-function calculateRent(rentStr, moveInDateStr, baseDate, overrideAmount) {
-    let amount = 0; 
-    let unit = "€"; // 修改：默认单位改为 €
-
-    // 1. 提取金额
-    if (overrideAmount !== null) { 
-        amount = overrideAmount; 
-    } else {
-        const moneyMatch = rentStr.match(/(\d+(\.\d+)?)/);
-        amount = moneyMatch ? parseFloat(moneyMatch[1]) : 0;
-        // 修改：如果匹配到货币单位，可以保持或强制统一，这里为了视觉统一可直接用 €
-        unit = "€"; 
-    }
-
-    // 内部阶梯计算逻辑（保持你的公式：(30-D)/5 取整 * 5）
-    const getDaysForMonth = (mDate, targetDate) => {
-        if (!mDate) return 0;
-        
-        const mYear = mDate.getFullYear();
-        const mMonth = mDate.getMonth();
-        const tYear = targetDate.getFullYear();
-        const tMonth = targetDate.getMonth();
-
-        // 未来月份入住：0天
-        if (mYear > tYear || (mYear === tYear && mMonth > tMonth)) return 0;
-
-        // 入住当月：执行 5天档位逻辑
-        if (mYear === tYear && mMonth === tMonth) {
-            const dayOfMonth = mDate.getDate();
-            //所有人都免5天以内
-            // const remainingDays = 30 - dayOfMonth;
-            // 核心修改：如果是 1 号，直接给 30 天；否则按 (30 - 入住日期) 计算
-            const remainingDays = (dayOfMonth === 1) ? 30 : (30 - dayOfMonth);
-            const step = Math.floor(remainingDays / 5);
-            return Math.max(0, step * 5);
+        let currentAmount = 0;
+        // 核心公式: (30 - 入住日) / 5 取整 * 5
+        if (moveDate.getFullYear() === baseDate.getFullYear() && moveDate.getMonth() === baseDate.getMonth()) {
+            const day = moveDate.getDate();
+            const remaining = (day === 1) ? 30 : Math.max(0, 30 - day);
+            currentAmount = (amount / 30) * (Math.floor(remaining / 5) * 5);
+        } else if (moveDate < baseDate) {
+            currentAmount = amount;
         }
 
-        // 之前月份入住：30天
-        return 30;
-    };
+        return { 
+            current: this.formatSmartAmount(currentAmount), // 调用新的舍入逻辑
+            next: this.formatSmartAmount(amount),           // 标准金额也按此逻辑
+            unit: unit 
+        };
+    },
+    // 房租金额舍入逻辑 (小于100省略个位，大于100省略十位)
+    formatSmartAmount: function(val) {
+        let num = parseFloat(val);
+        if (isNaN(num) || num <= 0) return "0";
 
-    // 2. 如果日期缺失，返回 0
-    if (!moveInDateStr || String(moveInDateStr).trim() === "undefined" || String(moveInDateStr).trim() === "null") {
-        return { current: "0.00", next: "0.00", unit: "€" };
-    }
-
-    const moveIn = parseFlexibleDate(moveInDateStr);
-    
-    // 3. 分别计算当月和次月
-    // 计算当月 (baseDate)
-    const currentBillingDays = getDaysForMonth(moveIn, baseDate);
-    const currentAmount = (amount / 30) * currentBillingDays;
-
-    // 计算次月 (baseDate + 1个月)
-    const nextMonthDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 1);
-    const nextBillingDays = getDaysForMonth(moveIn, nextMonthDate);
-    const nextAmount = (amount / 30) * nextBillingDays;
-
-    return { 
-        current: currentAmount.toFixed(2), 
-        next: nextAmount.toFixed(2), 
-        unit: unit 
-    };
-}
-
-function parseFlexibleDate(dateStr) {
-    if (!dateStr || dateStr === "undefined") return new Date();
-    if (String(dateStr).includes('.')) {
-        const p = dateStr.split('.');
-        if (p[2] && p[2].length === 4) return new Date(p[2], p[1] - 1, p[0]);
-    }
-    return new Date(dateStr);
-}
-
-function renderAccomAuditTable(data) {
-    const rows = data.map(item => {
-        let rowClass = ""; let badge = "";
-        switch(item.status) {
-            case "OVERRIDE": rowClass = "row-override"; badge = '<span class="badge" style="background:#13c2c2">手动覆盖</span>'; break;
-            case "MISSING_IN_APT": rowClass = "row-warning"; badge = '<span class="badge" style="background:#faad14">缺住宿记录</span>'; break;
-            case "MISSING_IN_EMP": rowClass = "row-special"; badge = '<span class="badge" style="background:#722ed1">库外居住</span>'; break;
-            case "NO_DATE": rowClass = "row-danger"; badge = '<span class="badge" style="background:#ff4d4f">缺入住日期</span>'; break;
-            default: badge = '<span class="badge" style="background:#52c41a">计算正常</span>';
+        if (num < 100) {
+            // 小于 100：省略个位（例如 87 -> 80）
+            return Math.floor(num / 10) * 10;
+        } else {
+            // 大于等于 100：省略十位以后（例如 285 -> 200, 1340 -> 1300）
+            return Math.floor(num / 100) * 100;
         }
-        const dateDisp = (!item.moveIn || item.moveIn === "undefined") ? '<span style="color:#ff4d4f">需补日期</span>' : item.moveIn;
-        // return `<tr class="${rowClass}"><td>${badge}</td><td>${item.id}</td><td>${item.name}</td><td>${dateDisp}</td><td>${item.rentStr}</td><td style="font-weight:bold;color:#1890ff">${item.current} ${item.unit}</td><td style="color:#52c41a">${item.next} ${item.unit}</td></tr>`;
-        return `
-            <tr class="${rowClass}">
-                <td>${badge}</td>
-                <td>${item.id}</td>
-                <td>${item.name}</td>
-                <td>${item.moveIn || '需补日期'}</td>
-                <td>${item.rentStr}</td>
-                <td style="font-weight:bold; color:#1890ff" title="基于5天档位逻辑计算">
-                    ${item.current} ${item.unit}
-                </td>
+    },
+
+    // 5. 渲染结果
+    renderUI: function(data) {
+        const $body = $('#ac-audit-body');
+        const rows = data.map(item => {
+            let cls = "", tag = "";
+            // 判断是否为非标准的住宿确认值
+            const isSpecialAcc = item.accValue && item.accValue.toUpperCase() !== 'YES';
+            const accDisplay = isSpecialAcc ? ` (${item.accValue})` : "";
+            switch(item.status) {
+                case "NORMAL": tag = isSpecialAcc ? `<span class="ac-tag" style="background:#ff7a45">待确认${accDisplay}</span>` : `<span class="ac-tag ac-tag-ok">计算正常</span>`; break;
+                case "MISSING_RECORD": cls = "ac-row-warn"; tag = `<span class="ac-tag ac-tag-warn">缺住宿记录${accDisplay}</span>`; break;
+                case "NO_DATE": cls = "ac-row-danger"; tag = '<span class="ac-tag ac-tag-err">缺入住日期</span>'; break;
+                case "EXT_STAY": cls = "ac-row-special"; tag = '<span class="ac-tag ac-tag-spec">库外居住</span>'; break;
+                case "OVERRIDE": cls = "ac-row-over"; tag = '<span class="ac-tag ac-tag-over">手动覆盖</span>'; break;
+            }
+            return `<tr class="${cls}">
+                <td>${tag}</td><td>${item.id}</td><td>${item.name}</td>
+                <td>${item.moveIn || '--'}</td><td>${item.rentStr}</td>
+                <td style="font-weight:bold;color:#1890ff">${item.current} ${item.unit}</td>
                 <td style="color:#52c41a">${item.next} ${item.unit}</td>
-            </tr>
-        `;
-    }).join('');
-    $('#accomAuditBody').html(rows);
-}
-
-// 底部诊断看板强化
-// function renderEnhancedDiagnostics(data) {
-//     const noDate = data.filter(d => d.status === "NO_DATE");
-//     const aptOnly = data.filter(d => d.status === "MISSING_IN_EMP");
-//     const overrides = data.filter(d => d.status === "OVERRIDE");
-
-//     const getDiagHtml = (list, type) => {
-//         if (list.length === 0) return '<div class="diag-item">无相关异常</div>';
-//         return list.map(i => {
-//             let msg = "";
-//             if(type==='date') msg = `<span class="diag-tag">ERROR:</span> 住宿表日期列为空`;
-//             if(type==='emp') msg = `<span class="diag-tag">INFO:</span> Employees表未设为Yes(此人出现在apartment表了) 或 ID缺失`;
-//             if(type==='over') msg = `<span class="diag-tag">SET:</span> 已强制改为固定金额`;
-//             return `<div class="diag-item"><b>[${i.id}] ${i.name}</b><br/>${msg}</div>`;
-//         }).join('');
-//     };
-
-//     $('#diagGrid').html(`
-//         <div class="diag-card">
-//             <h5 style="color:#ff4d4f"><i class="fas fa-calendar-times"></i> 入住日期异常 (${noDate.length})</h5>
-//             ${getDiagHtml(noDate, 'date')}
-//         </div>
-//         <div class="diag-card">
-//             <h5 style="color:#722ed1"><i class="fas fa-user-slash"></i> 库外/交租未开启 (${aptOnly.length})</h5>
-//             ${getDiagHtml(aptOnly, 'emp')}
-//         </div>
-//         <div class="diag-card">
-//             <h5 style="color:#13c2c2"><i class="fas fa-user-check"></i> 手动金额修正记录 (${overrides.length})</h5>
-//             ${getDiagHtml(overrides, 'over')}
-//         </div>
-//     `);
-// }
-function renderEnhancedDiagnostics(data) {
-    // 修正后的逻辑：
-    // 1. 日期异常：包含【状态为 NO_DATE】以及【没有日期且缺记录】的人
-    const noDate = data.filter(d => 
-        d.status === "NO_DATE" || 
-        ((d.status === "MISSING_IN_APT" || d.status === "MISSING_IN_EMP") && (!d.moveIn || String(d.moveIn) === "null" || String(d.moveIn) === "undefined"))
-    );
-    
-    // 2. 库外/未设交租：仅统计那些确实有居住记录（有日期）但 Employees 表没勾选的人
-    const aptOnly = data.filter(d => d.status === "MISSING_IN_EMP" && d.moveIn && String(d.moveIn) !== "undefined");
-    
-    // 3. 手动覆盖
-    const overrides = data.filter(d => d.status === "OVERRIDE");
-
-    const buildItems = (list) => {
-        if (list.length === 0) return '<div class="diag-item">无相关异常</div>';
-        // 增加更详细的描述，让你知道具体缺什么
-        return list.map(i => {
-            let reason = "";
-            if (i.status === "MISSING_IN_APT") reason = "【(要交租金但是)住宿表搜不到此人 或 住宿表 员工ID对不上(修改住宿表对应人员ID)】";
-            if (i.status === "NO_DATE") reason = " (入住日期为空)";
-            if (i.status === "MISSING_IN_EMP") reason = " 【员工表交租设置有误(Accommodation为No但是住宿表有记录) / (Apartment姓名和员工编号不匹配)】";
-            
-            return `<div class="diag-item"><b>[${i.id}]</b> ${i.name}<span style="color:#999;font-size:10px;">${reason}</span></div>`;
+            </tr>`;
         }).join('');
-    };
+        $body.html(rows);
 
-    $('#diagGrid').html(`
-        <div class="diag-card" style="border-color:#ff4d4f">
-            <h5><i class="fas fa-calendar-times"></i> 入住日期异常 (${noDate.length})</h5>
-            ${buildItems(noDate)}
-        </div>
-        <div class="diag-card" style="border-color:#722ed1">
-            <h5><i class="fas fa-user-slash"></i> 库外/未设交租 (${aptOnly.length})</h5>
-            ${buildItems(aptOnly)}
-        </div>
-        <div class="diag-card" style="border-color:#13c2c2">
-            <h5><i class="fas fa-user-check"></i> 手动覆盖记录 (${overrides.length})</h5>
-            ${buildItems(overrides)}
-        </div>
-    `);
-}
+        // 更新看板
+        this.renderDiag(data);
+    },
+
+    renderDiag: function(data) {
+        const errs = data.filter(d => d.status === "NO_DATE");
+        const warns = data.filter(d => d.status === "MISSING_RECORD");
+        const exts = data.filter(d => d.status === "EXT_STAY");
+
+        $('#ac-diag-grid').html(`
+            <div class="ac-diag-card ac-border-red">
+                <h5>❌ 日期异常 (${errs.length})</h5>
+                ${errs.map(i => `<div class="ac-diag-item"><b>${i.id}</b> ${i.name}<br/>原因: 住宿表入住日期未填写</div>`).join('') || '无异常'}
+            </div>
+            <div class="ac-diag-card ac-border-yellow">
+                <h5>⚠️ 缺住宿记录 (${warns.length})</h5>
+                ${warns.map(i => `<div class="ac-diag-item"><b>${i.id}</b> ${i.name}<br/>原因: 员工表设为Yes但住宿表搜不到</div>`).join('') || '无异常'}
+            </div>
+            <div class="ac-diag-card ac-border-purple">
+                <h5>ℹ️ 库外居住 (${exts.length})</h5>
+                ${exts.map(i => `<div class="ac-diag-item"><b>${i.id}</b> ${i.name}<br/>原因: 住宿表有记录但员工表未开启交租</div>`).join('') || '无异常'}
+            </div>
+        `);
+    }
+};
+
+window.renderAccommodationModule = (id) => AccommodationEngine.render(id);
