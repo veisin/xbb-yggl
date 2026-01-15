@@ -35,6 +35,7 @@ const AccommodationEngine = {
                         <input type="number" id="ac-override-val" class="ac-ui-input" value="0">
                         
                         <button id="ac-run-btn" class="ac-btn-run">开始计算并诊断</button>
+                        <button id="ac-export-btn" class="ac-btn-export" style="margin-top:10px; background:#107c10;">导出结算报表 (Excel)</button>
                     </div>
                 </aside>
 
@@ -77,6 +78,7 @@ const AccommodationEngine = {
     bindEvents: function() {
         const self = this;
         this.state.container.on('click', '#ac-run-btn', () => self.runAudit());
+        this.state.container.on('click', '#ac-export-btn', () => self.exportToExcelWithStyles());
     },
 
     // 3. 核心计算逻辑
@@ -143,8 +145,82 @@ const AccommodationEngine = {
                 }
             });
 
+            this.lastResults = results; // 暂存结果供导出使用
+
             this.renderUI(results);
         } catch (e) { alert("计算出错: " + e.message); }
+    },
+
+    //导出Excel
+    exportToExcelWithStyles: async function() {
+        if (!this.lastResults || this.lastResults.length === 0) {
+            alert("请先点击『开始计算』");
+            return;
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('宿舍结算单');
+
+        // 1. 设置表头及其样式
+        worksheet.columns = [
+            { header: '状态', key: 'status', width: 20 },
+            { header: '工号', key: 'id', width: 15 },
+            { header: '姓名', key: 'name', width: 20 },
+            { header: '入住日期', key: 'moveIn', width: 15 },
+            { header: '标准租金', key: 'rentStr', width: 15 },
+            { header: '当月预估', key: 'current', width: 15 },
+            { header: '次月标准', key: 'next', width: 15 }
+        ];
+
+        // 表头美化
+        worksheet.getRow(1).eachCell((cell) => {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+            cell.font = { name: 'Arial', family: 2, size: 11, bold: true }; 
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        });
+
+        // 2. 添加数据并根据状态设置背景色
+        this.lastResults.forEach((item) => {
+            const row = worksheet.addRow({
+                status: item.accValue !== 'YES' ? `${item.status}(${item.accValue})` : item.status,
+                id: item.id,
+                name: item.name,
+                moveIn: item.moveIn || '--',
+                rentStr: item.rentStr,
+                current: `${item.current} ${item.unit}`,
+                next: `${item.next} ${item.unit}`
+            });
+            let bgColor = 'FFFFFFFF'; // 默认白色
+            // 2. 优先判断是否是“待确认”（Accommodation 不是 YES 的人）
+            // 我们给它一个和网页类似的橙黄色背景 (ARGB: FFFFF7E6)
+            if (item.accValue && item.accValue.toUpperCase() !== 'YES') {
+                bgColor = 'FFFFF7E6'; 
+            }
+
+            // 根据状态还原网页背景色 (ARGB 格式)
+            
+            if (item.status === "MISSING_RECORD") bgColor = 'FFFFFBE6'; // 橙黄 (ac-row-warn)
+            if (item.status === "NO_DATE") bgColor = 'FFFFF1F0';        // 淡红 (ac-row-danger)
+            if (item.status === "EXT_STAY") bgColor = 'FFF9F0FF';       // 淡紫 (ac-row-special)
+            if (item.status === "OVERRIDE") bgColor = 'FFE6FFFB';       // 淡青 (ac-row-over)
+
+            row.eachCell((cell) => {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+                
+                // 设置每一行单元格的字体为 Arial
+                cell.font = { name: 'Arial', family: 2, size: 10 }; 
+                
+                cell.border = {
+                    top: { style: 'thin', color: { argb: 'FFEEEEEE' } },
+                    bottom: { style: 'thin', color: { argb: 'FFEEEEEE' } }
+                };
+            });
+        });
+
+        // 3. 导出文件
+        const buffer = await workbook.xlsx.writeBuffer();
+        const month = $('#ac-calc-month').val();
+        saveAs(new Blob([buffer]), `宿舍结算报表_${month}.xlsx`);
     },
 
     // 4. 房租算法与货币处理

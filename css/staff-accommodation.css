@@ -43,3 +43,17 @@
 .ac-border-red { border-left: 4px solid #ff4d4f; }
 .ac-border-yellow { border-left: 4px solid #faad14; }
 .ac-border-purple { border-left: 4px solid #722ed1; }
+
+.ac-btn-export { 
+    width: 100%; 
+    padding: 10px; 
+    background: #107c10; /* Excel 经典绿 */
+    color: white; 
+    border: none; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    font-size: 13px;
+    transition: 0.2s; 
+}
+.ac-btn-export:hover { background: #0a5c0a; }
