@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>本地数据管理系统</title>
+    <link rel="stylesheet" href="css/yuangong.css">
+    <link rel="stylesheet" href="css/data_processor.css">
+    <link rel="stylesheet" href="css/staff-accommodation.css">
+    <script src="js/jquery-3.7.1.min.js"></script>
+    <script src="js/xlsx.full.min.js"></script>
+    <script src="js/exceljs.min.js"></script>
+    <script src="js/FileSaver.min.js"></script>
+
+
+</head>
+<body>
+
+<div class="wrapper">
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3 class="nav-title">🐚🐱的数据管理系统</h3>
+            <div id="sidebarCollapse" class="toggle-icon">☰</div>
+        </div>
+
+        <ul class="list-unstyled components">
+            <li class="nav-item">
+                <div class="nav-link action-btn" data-id="create-table" data-type="module" data-title="创建新表格">
+                    <span class="icon">➕</span><span class="menu-text">创建新表格</span>
+                </div>
+            </li>
+
+            <li class="nav-item">
+                <a href="javascript:void(0)" class="dropdown-toggle">
+                    <span class="icon">📂</span><span class="menu-text">表格数据查看</span>
+                    <span class="arrow">▼</span>
+                </a>
+                <ul class="collapse list-unstyled" id="tableMenu">
+                    </ul>
+            </li>
+
+            <li class="nav-item">
+                <a href="javascript:void(0)" class="dropdown-toggle">
+                    <span class="icon">📈</span><span class="menu-text">各种报表展示</span>
+                    <span class="arrow">▼</span>
+                </a>
+                <ul class="collapse list-unstyled">
+                    <li class="nav-link" data-id="staff-accommodation" data-type="module" data-title="员工住宿"><span class="icon">🔍</span><span class="menu-text">员工住宿</span></li>
+                    <li class="nav-link" data-id="report-duplicate" data-type="module" data-title="员工查重"><span class="icon">👥</span><span class="menu-text">员工查重</span></li>
+                </ul>
+            </li>
+
+            <li class="nav-item">
+                <a href="javascript:void(0)" class="dropdown-toggle">
+                    <span class="icon">💾</span><span class="menu-text">备份管理</span>
+                    <span class="arrow">▼</span>
+                </a>
+                <ul class="collapse list-unstyled">
+                    <li class="nav-link" data-id="backup-export" data-type="module" data-title="全库数据导出"><span class="icon">📤</span><span class="menu-text">数据库导出</span></li>
+                    <!-- <li class="nav-link" data-id="backup-export" data-type="module" onclick="handleFullDatabaseExport()" data-title="全库数据导出"><span class="icon">📤</span><span class="menu-text">数据库导出</span></li> -->
+                    <li class="nav-link" data-id="backup-restore" data-type="module" data-title="全库数据还原"><span class="icon">📥</span><span class="menu-text">数据库还原</span></li>
+                    <li class="nav-link" data-id="schema-manage" data-type="module" data-title="修改表的列结构"><span class="icon">📝</span><span class="menu-text">修改表名/字段</span></li>
+                    <!-- <li class="nav-link" data-id="backup-history" data-type="module" data-title="历史快照"><span class="icon">📜</span><span class="menu-text">历史快照</span></li> -->
+                </ul>
+            </li>
+
+<!--             <li class="nav-item">
+                <a href="javascript:void(0)" class="dropdown-toggle">
+                    <span class="icon">🛠️</span><span class="menu-text">表结构管理</span>
+                    <span class="arrow">▼</span>
+                </a>
+                <ul class="collapse list-unstyled">
+                    <li class="nav-link" data-id="schema-manage" data-type="module" data-title="修改结构"><span class="icon">📝</span><span class="menu-text">修改表名/字段</span></li>
+                    <li class="nav-link" data-id="schema-delete" data-type="module" data-title="删除表格"><span class="icon">❌</span><span class="menu-text">删除表格</span></li>
+                </ul>
+            </li> -->
+
+            <hr class="menu-divider">
+
+            <li class="nav-link nav-item" data-id="dashboard" data-type="module" data-title="仪表盘分析">
+                <span class="icon">📊</span><span class="menu-text">仪表盘分析</span>
+            </li>
+            <li class="nav-link nav-item" data-id="processing" data-type="module" data-title="表格数据处理">
+                <span class="icon">📑</span><span class="menu-text">表格数据处理</span>
+            </li>
+            <li class="nav-link nav-item" data-id="settings" data-type="module" data-title="系统设置">
+                <span class="icon">⚙️</span><span class="menu-text">系统设置</span>
+            </li>
+        </ul>
+    </nav>
+
+
+    <!-- 修改表的 列名 -->
+    <div id="modalEditSchema" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>修改表结构</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editSchemaId">
+                <div class="form-group">
+                    <label>表格显示名称:</label>
+                    <input type="text" id="editSchemaTitle" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>字段定义 (逗号隔开):</label>
+                    <textarea id="editSchemaColumns" class="form-control" rows="5"></textarea>
+                    <small style="color:red;">注意：修改字段名会导致旧数据中对应的列丢失！</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">取消</button>
+                <button class="btn-confirm" onclick="handleSaveSchema()">保存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 初始化提示语 -->
+    <div id="content">
+        <div id="tabHeader" class="tab-header"></div>
+        <div id="mainView" class="main-content">
+            <div class="tabs-wrapper">
+                <ul id="tabStrip" class="tab-strip"></ul>
+            </div>
+            <div id="tabContent" class="tab-content-area">
+                <div class="welcome-screen">
+                    <h3>欢迎使用管理系统</h3>
+                    <p>请从左侧菜单选择一个表格开始操作</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 二选一 + sheet选择 框 -->
+<div id="sheetSelectModal" class="custom-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:999999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:25px; border-radius:12px; width:350px;">
+        <h3>选择工作表</h3>
+        <select id="sheetDropdown" style="width:100%; margin:20px 0; padding:10px;"></select>
+        <div style="display:flex; gap:10px; flex-direction:column;">
+            <button id="sheetBtnConfirm" style="background:#27ae60; color:white; border:none; padding:10px;">确认</button>
+            <button id="sheetBtnCancel" style="background:#95a5a6; color:white; border:none; padding:10px;">取消</button>
+        </div>
+    </div>
+</div>
+<div id="choiceModal" class="custom-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div class="modal-content" style="background:white; padding:20px; border-radius:8px; width:350px; text-align:center;">
+        <h3 id="choiceTitle"></h3>
+        <p id="choiceMessage" style="margin:15px 0;"></p>
+        <div class="choice-button-group" style="display:flex; flex-direction:column; gap:10px;">
+            <button id="choiceBtn1" class="btn-confirm"></button>
+            <button id="choiceBtn2" class="btn-confirm" style="background:#e67e22;"></button>
+            <button id="choiceBtnCancel" class="btn-cancel"></button>
+        </div>
+    </div>
+</div>
+
+<!-- 导出配置模态框 -->
+<div id="exportConfigModal" class="custom-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:999999; justify-content:center; align-items:center;">
+    <div class="modal-content" style="background:white; padding:25px; border-radius:12px; width:450px; max-height:90vh; overflow-y:auto;">
+        <h3 style="border-bottom:2px solid #eee; padding-bottom:10px;">📊 导出自定义设置</h3>
+        
+        <div style="text-align: left; margin-top:15px; display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div>
+                <label style="font-size:12px; color:#666;">表头背景</label>
+                <input type="color" id="headerBgColor" value="#46BDC6" style="width:100%; height:35px;">
+            </div>
+            <div>
+                <label style="font-size:12px; color:#666;">表头文字</label>
+                <input type="color" id="headerFontColor" value="#ffffff" style="width:100%; height:35px;">
+            </div>
+        </div>
+
+        <div style="margin-top:20px; text-align:left;">
+            <label style="font-weight:bold;">🌟 高亮特定列设置</label>
+            <div style="display:flex; gap:10px; margin-top:5px;">
+                <select id="highlightColIndex" style="flex:1; padding:8px; border-radius:5px; border:1px solid #ddd;">
+                    </select>
+                <input type="color" id="colHighlightColor" value="#FFF2CC" style="width:50px; height:38px;">
+            </div>
+            <p style="font-size:11px; color:#999; margin-top:5px;">提示：选择一列，并为其设置背景颜色。</p>
+        </div>
+
+        <div style="margin-top:20px; text-align:left;">
+            <label><input type="checkbox" id="autoWidth" checked> 自动优化列宽 (防止文字遮挡)</label>
+        </div>
+
+        <div style="margin-top:25px; display:flex; gap:10px;">
+            <button id="btnDoExport" style="flex:1; background:#2ecc71; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">确认导出</button>
+            <button id="btnCancelExport" style="flex:1; background:#95a5a6; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer;">取消</button>
+        </div>
+    </div>
+</div>
+
+<!-- 表格数据新增 -->
+<div id="dataEntryModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="width: 80%; max-width: 1000px;">
+        <div class="modal-header">
+            <h4>➕ 新增数据 - <span id="entryTableTitle"></span></h4>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="dataEntryForm" class="dynamic-form">
+                </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel">取消</button>
+            <button class="btn-confirm" id="saveDataRowBtn">确认添加</button>
+        </div>
+    </div>
+</div>
+<!-- 确认框弹出框 -->
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px;"> <div class="modal-header">
+            <h4 id="confirmTitle">确认操作</h4>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage" style="font-size: 15px; color: #34495e; line-height: 1.5;"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" id="confirmBtnCancel">取消</button>
+            <button class="btn-confirm btn-danger" id="confirmBtnOk">确定</button>
+        </div>
+    </div>
+</div>
+<!-- 吐司框 -->
+<div id="toast-container"></div>
+<script src="js/db.js"></script>
+<script src="js/yuangong.js"></script>
+<script src="js/data_processor.js"></script>
+<script src="js/staff-accommodation.js"></script>
+</body>
+</html>
