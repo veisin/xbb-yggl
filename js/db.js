@@ -309,3 +309,31 @@ window.restoreFullDatabase = async function(tablesArray) {
         transaction.onerror = (e) => reject(e.target.error);
     });
 };
+
+
+// js/db.js 追加此函数
+window.deleteRowByUid = async function(tableId, uniqueId) {
+    const db = await initDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['tableData'], 'readwrite');
+        const store = transaction.objectStore('tableData');
+
+        const request = store.get(tableId);
+        request.onsuccess = () => {
+            let record = request.result;
+            if (!record || !record.data) return reject("未找到表数据");
+
+            // 核心逻辑：根据 row[0] (即 UID) 进行过滤
+            const initialLength = record.data.length;
+            record.data = record.data.filter(row => row[0] !== uniqueId); 
+
+            if (record.data.length === initialLength) {
+                return reject("未找到匹配的唯一ID，删除中止");
+            }
+
+            const updateRequest = store.put(record);
+            updateRequest.onsuccess = () => resolve(true);
+        };
+        transaction.onerror = (e) => reject("事务失败: " + e.target.error);
+    });
+};

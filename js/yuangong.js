@@ -10,6 +10,9 @@ window.tableEditRegistry = window.tableEditRegistry || {};
 window.tableViewRegistry = window.tableViewRegistry || {};
 let currentExportTableId = '';// 全局暂存 导出 tableId
 
+// 全局变量，用于控制强制刷新 表格数据
+window.forceRefresh = false;
+
 $(document).ready(async function () {
     // 1. 初始化数据库
     const db = await initDB();
@@ -971,10 +974,13 @@ async function renderTableView(tableId) {
     const isNoMemory = !window.tableEditRegistry[tableId];
     const lengthChanged = window.tableEditRegistry[tableId]?.length !== dbData.length;
 
-    if (isNoMemory || lengthChanged) {
+    if (isNoMemory || lengthChanged || window.forceRefresh) {
         // 只有在长度变化或首次加载时才强制覆盖内存，防止编辑到一半被重置
         window.tableOriginalRegistry[tableId] = JSON.parse(JSON.stringify(dbData));
         window.tableEditRegistry[tableId] = JSON.parse(JSON.stringify(dbData));
+
+        // 强制刷新后将 forceRefresh 置为 false，防止再次强制刷新
+        window.forceRefresh = false;
     }
 
     // 2. 无论有没有修改，渲染前都重新构建一次视图数据（处理排序）
