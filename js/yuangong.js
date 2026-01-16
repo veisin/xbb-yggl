@@ -689,6 +689,12 @@ $(document).ready(async function () {
                 case 'staff-accommodation':
                     renderAccommodationModule('tabContent'); // 导航 表格数据处理 
                     break;
+                case 'employee-addmove':
+                    employeeManagementModule('tabContent'); // 导航 员工表数据管理 
+                    break;
+                case 'apartment-addmove':
+                    apartmentManagementModule('tabContent'); // 导航 公寓表数据管理 
+                    break;
                 case 'backup-export':
                     backupExportUI(id, title); // 执行 数据库备份还原 的界面渲染
                     break;
@@ -1204,6 +1210,7 @@ function showMsg(msg, type = 'info') {
     const icons = {
         success: '✅',
         error: '❌',
+        warning: '⚠️',
         info: 'ℹ️'
     };
     

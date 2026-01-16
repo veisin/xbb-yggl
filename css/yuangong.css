@@ -333,6 +333,7 @@ body {
 .toast.success { background-color: #2ecc71; border-left: 5px solid #27ae60; }
 .toast.error   { background-color: #e74c3c; border-left: 5px solid #c0392b; }
 .toast.info    { background-color: #3498db; border-left: 5px solid #2980b9; }
+.toast.warning { background-color: #f39c12; border-left: 5px solid #d68910; }
 
 /* 动画效果 */
 @keyframes toastFadeIn {

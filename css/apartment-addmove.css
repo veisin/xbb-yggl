@@ -1,0 +1,108 @@
+/* ============================================================
+   Apartment (公寓管理) 专用隔离样式 - 雅致蓝灰版
+   ============================================================ */
+
+/* 1. 基础容器与背景 - 使用雅致的浅蓝灰 */
+.apt-module.em-app-container {
+    height: 85vh; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden;
+    background: #f1f5f9; 
+    font-family: 'Segoe UI', "Microsoft YaHei", sans-serif;
+}
+
+/* 2. 顶部导航头 - 改为浅色蓝灰 (莫兰迪色系) */
+.apt-module .em-fixed-header {
+    background: #cbd5e1; /* 雅致的浅蓝灰，不再是黑色 */
+    border-bottom: 2px solid #94a3b8; 
+    padding: 12px 25px; 
+    flex-shrink: 0;
+    z-index: 100;
+}
+
+/* 3. 顶部文字颜色 - 浅色背景用深色字 */
+.apt-module .em-brand h2,
+.apt-module .em-brand i { 
+    color: #334155; 
+}
+.apt-module .em-brand i { font-size: 26px; }
+
+/* 4. 统计卡片 - 颜色稍微加深一点以示区分 */
+.apt-module .chip-total { background: #94a3b8; color: #ffffff; padding: 2px 10px; border-radius: 12px; font-weight: 600; }
+.apt-module .chip-accom { background: #64748b; color: #ffffff; padding: 2px 10px; border-radius: 12px; font-weight: 600; }
+
+/* 5. 按钮规范 - 使用深灰蓝色按钮 */
+.apt-module .em-btn { 
+    padding: 8px 18px; border-radius: 8px; border: 1px solid transparent; 
+    cursor: pointer; display: flex; align-items: center; gap: 8px; 
+    font-size: 14px; font-weight: 500; transition: all 0.2s ease;
+}
+.apt-module .em-btn.primary { 
+    background: #475569; /* 商务蓝灰 */
+    color: white; 
+    box-shadow: 0 2px 4px rgba(71, 85, 105, 0.2); 
+}
+.apt-module .em-btn.primary:hover { 
+    background: #334155; 
+    transform: translateY(-1px); 
+}
+.apt-module .em-btn.secondary { 
+    background: white; 
+    border-color: #94a3b8; 
+    color: #475569; 
+}
+
+/* 6. 搜索框 - 适配浅蓝灰背景 */
+.apt-module .em-search-wrapper input { 
+    background: #f8fafc;
+    padding: 8px 12px 8px 35px; border: 1px solid #94a3b8; border-radius: 20px; 
+    width: 220px; outline: none; transition: 0.3s; font-size: 14px;
+    color: #334155;
+}
+.apt-module .em-search-wrapper input::placeholder { color: #94a3b8; }
+.apt-module .em-search-wrapper i { position: absolute; left: 12px; top: 10px; color: #64748b; }
+
+/* 7. 表格区域 */
+.apt-module .em-content-area { flex: 1; overflow: hidden; padding: 15px; }
+.apt-module .em-table-viewport { 
+    height: 100%; width: 100%; overflow: auto; 
+    border: 1px solid #94a3b8; border-radius: 12px; background: white; 
+}
+.apt-module #em-master-table { width: 100%; border-collapse: separate; min-width: 2000px; border-spacing: 0; }
+.apt-module #em-master-table th { 
+    position: sticky; top: 0; background: #e2e8f0; z-index: 20; 
+    padding: 14px 15px; border-bottom: 2px solid #94a3b8;
+    color: #1e293b; text-align: left; font-size: 13px;
+}
+
+/* 8. 固定操作列 - 优化阴影 */
+.apt-module .em-sticky-opt-col { 
+    position: sticky; right: 0; background: white !important; 
+    z-index: 15; border-left: 2px solid #cbd5e1; text-align: center !important; 
+    box-shadow: -4px 0 8px rgba(0,0,0,0.03);
+}
+
+/* 9. 到期 5 级变色 - 保持不变，这是核心功能 */
+.apt-module .cell-expired { background-color: #fee2e2 !important; color: #b91c1c !important; font-weight: bold; border-left: 4px solid #ef4444 !important; }
+.apt-module .cell-3days   { background-color: #ffedd5 !important; color: #c2410c !important; }
+.apt-module .cell-10days  { background-color: #fef9c3 !important; color: #a16207 !important; }
+.apt-module .cell-20days  { background-color: #f0f9ff !important; color: #0369a1 !important; }
+.apt-module .cell-30days  { background-color: #f0fdf4 !important; color: #15803d !important; }
+
+/* 10. 抽屉与遮罩 - 保持逻辑一致 */
+.apt-module .em-mask { 
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); 
+    backdrop-filter: blur(2px); visibility: hidden; opacity: 0; transition: 0.3s; z-index: 1000; 
+}
+.apt-module .em-mask.active { visibility: visible; opacity: 1; pointer-events: auto; }
+.apt-module .em-drawer { 
+    position: fixed; top: 0; right: -500px; width: 480px; height: 100%; 
+    background: white; z-index: 1001; transition: 0.4s; display: flex; flex-direction: column;
+}
+.apt-module .em-drawer.active { right: 0; }
+.apt-module .em-form-item { margin-bottom: 18px; padding: 0 25px; }
+.apt-module .em-form-item label { display: block; font-size: 13px; color: #64748b; margin-bottom: 6px; font-weight: 600; }
+.apt-module .em-form-item input { 
+    width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; 
+}

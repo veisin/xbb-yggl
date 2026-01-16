@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="css/data_processor.css">
     <link rel="stylesheet" href="css/staff-accommodation.css">
     <link rel="stylesheet" href="css/employee-toapartment.css">
+    <link rel="stylesheet" href="css/employee-addmove.css">
+    <link rel="stylesheet" href="css/apartment-addmove.css">
     <script src="js/jquery-3.7.1.min.js"></script>
     <script src="js/xlsx.full.min.js"></script>
     <script src="js/exceljs.min.js"></script>
@@ -41,7 +43,7 @@
                     </ul>
             </li>
 
-            <li class="nav-item">
+            <!-- <li class="nav-item">
                 <a href="javascript:void(0)" class="dropdown-toggle">
                     <span class="icon">🪶</span><span class="menu-text">表数据修改维护</span>
                     <span class="arrow">▼</span>
@@ -49,11 +51,33 @@
                 <ul class="collapse list-unstyled">
                     <li class="nav-link" data-id="employee-toapartment" data-type="module" data-title="员工入住公寓"><span class="icon">🏠</span><span class="menu-text">员工入住设置</span></li>
                     <li class="nav-link" data-id="employee-addmove" data-type="module" data-title="员工管理"><span class="icon">🏠</span><span class="menu-text">员工数据管理</span></li>
-                    <!-- <li class="nav-link" data-id="report-duplicate" data-type="module" data-title="员工查重"><span class="icon">👥</span><span class="menu-text">员工查重</span></li> -->
+                    <li class="nav-link" data-id="apartment-addmove" data-type="module" data-title="公寓管理"><span class="icon">🏠</span><span class="menu-text">公寓数据管理</span></li>
+                </ul>
+            </li> -->
+
+            <li class="nav-item">
+                <a href="javascript:void(0)" class="dropdown-toggle">
+                    <span class="icon"><i class="fas fa-tools"></i></span>
+                    <span class="menu-text">表数据修改维护</span>
+                    <span class="arrow">▼</span>
+                </a>
+                <ul class="collapse list-unstyled">
+                    <li class="nav-link" data-id="employee-toapartment" data-type="module" data-title="员工入住公寓">
+                        <span class="icon"><i class="fas fa-key"></i></span>
+                        <span class="menu-text">员工入住设置</span>
+                    </li>
+                    <li class="nav-link" data-id="employee-addmove" data-type="module" data-title="员工管理">
+                        <span class="icon"><i class="fas fa-user-edit"></i></span>
+                        <span class="menu-text">员工数据管理</span>
+                    </li>
+                    <li class="nav-link" data-id="apartment-addmove" data-type="module" data-title="公寓管理">
+                        <span class="icon"><i class="fas fa-city"></i></span>
+                        <span class="menu-text">公寓数据管理</span>
+                    </li>
                 </ul>
             </li>
 
-            <li class="nav-item">
+<!--             <li class="nav-item">
                 <a href="javascript:void(0)" class="dropdown-toggle">
                     <span class="icon">📈</span><span class="menu-text">各种报表展示</span>
                     <span class="arrow">▼</span>
@@ -61,6 +85,24 @@
                 <ul class="collapse list-unstyled">
                     <li class="nav-link" data-id="staff-accommodation" data-type="module" data-title="员工住宿"><span class="icon">🔍</span><span class="menu-text">员工住宿检测</span></li>
                     <li class="nav-link" data-id="report-duplicate" data-type="module" data-title="员工查重"><span class="icon">👥</span><span class="menu-text">员工查重</span></li>
+                </ul>
+            </li> -->
+
+            <li class="nav-item">
+                <a href="javascript:void(0)" class="dropdown-toggle">
+                    <span class="icon"><i class="fas fa-chart-line"></i></span>
+                    <span class="menu-text">各种报表展示</span>
+                    <span class="arrow">▼</span>
+                </a>
+                <ul class="collapse list-unstyled">
+                    <li class="nav-link" data-id="staff-accommodation" data-type="module" data-title="员工住宿">
+                        <span class="icon"><i class="fas fa-clipboard-check"></i></span>
+                        <span class="menu-text">员工住宿检测</span>
+                    </li>
+                    <li class="nav-link" data-id="report-duplicate" data-type="module" data-title="员工查重">
+                        <span class="icon"><i class="fas fa-user-shield"></i></span>
+                        <span class="menu-text">员工查重</span>
+                    </li>
                 </ul>
             </li>
 
@@ -246,5 +288,7 @@
 <script src="js/data_processor.js"></script>
 <script src="js/staff-accommodation.js"></script>
 <script src="js/employee-toapartment.js"></script>
+<script src="js/employee-addmove.js"></script>
+<script src="js/apartment-addmove.js"></script>
 </body>
 </html>
